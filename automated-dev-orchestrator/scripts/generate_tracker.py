@@ -88,6 +88,19 @@ def create_phased_plan(client: OpenAI, analysis: str) -> str:
     )
     return response.choices[0].message.content
 
+def extract_project_name(tracker_content: str) -> str:
+    """Extract project name from the generated tracker"""
+    import re
+    # Look for "# Project: [Name]" pattern
+    match = re.search(r'^#\s+Project:\s+(.+)$', tracker_content, re.MULTILINE)
+    if match:
+        name = match.group(1).strip()
+        # Convert to valid repo name (lowercase, replace spaces with hyphens)
+        name = re.sub(r'[^a-zA-Z0-9-]', '-', name.lower())
+        name = re.sub(r'-+', '-', name).strip('-')
+        return name
+    return "unnamed-project"
+
 def format_progress_tracker(client: OpenAI, project_name: str, plan: str, analysis: str) -> str:
     """Format the final progress tracker document"""
     response = client.chat.completions.create(
@@ -193,6 +206,8 @@ async def main():
                        help='Output file name (default: PROGRESS_TRACKER.md)')
     parser.add_argument('--project-name', type=str,
                        help='Project name (extracted from path if not provided)')
+    parser.add_argument('--extract-project-name', action='store_true',
+                       help='Extract and output project name from generated tracker')
     
     args = parser.parse_args()
     
@@ -217,6 +232,11 @@ async def main():
         output_path = Path(args.output)
         with open(output_path, 'w') as f:
             f.write(tracker_content)
+        
+        # Extract project name if requested
+        if args.extract_project_name:
+            extracted_name = extract_project_name(tracker_content)
+            print(f"PROJECT_NAME:{extracted_name}")
         
         print(f"\n✓ Progress tracker generated: {output_path}")
         print(f"  Project: {project_name}")
