@@ -100,9 +100,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
         run: |
+          # Create unique repo name with timestamp
+          UNIQUE_NAME="${{ steps.generate_tracker.outputs.project_name }}-${{ steps.timestamp.outputs.timestamp }}"
+          
           python automated-dev-orchestrator/scripts/create_repo.py \
             --tracker PROGRESS_TRACKER.md \
-            --project-name "${{ steps.generate_tracker.outputs.project_name }}" \
+            --project-name "$UNIQUE_NAME" \
             --org Human-Frontier-Labs-Inc \
             --webhook-url "${{ secrets.DEV_SERVER_WEBHOOK_URL }}" \
             --metadata metadata.json \
@@ -124,7 +127,7 @@ jobs:
           
           - **Project Name**: ${{ steps.generate_tracker.outputs.project_name }}
           - **Processed At**: ${{ steps.timestamp.outputs.timestamp }}
-          - **Repository Created**: https://github.com/Human-Frontier-Labs-Inc/${{ steps.generate_tracker.outputs.project_name }}
+          - **Repository Created**: https://github.com/Human-Frontier-Labs-Inc/${{ steps.generate_tracker.outputs.project_name }}-${{ steps.timestamp.outputs.timestamp }}
           - **Workflow Run**: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           EOF
           
@@ -134,8 +137,8 @@ jobs:
         if: steps.check_docs.outputs.docs_exists == 'true'
         run: |
           # Configure git
-          git config --global user.email "automation@ideabrow.com"
-          git config --global user.name "Ideabrow Automation"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
           
           # Remove original docs folder
           rm -rf docs
@@ -148,7 +151,7 @@ jobs:
           git commit -m "Process documentation for ${{ steps.generate_tracker.outputs.project_name }}
 
           - Generated progress tracker
-          - Created repository: ${{ steps.generate_tracker.outputs.project_name }}
+          - Created repository: ${{ steps.generate_tracker.outputs.project_name }}-${{ steps.timestamp.outputs.timestamp }}
           - Archived original docs to processed-originals/
           - Cleaned up docs folder for next automation run"
           
@@ -164,7 +167,7 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Actions Completed:" >> $GITHUB_STEP_SUMMARY
           echo "- Generated progress tracker from /docs" >> $GITHUB_STEP_SUMMARY
-          echo "- Created repository: ${{ steps.generate_tracker.outputs.project_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Created repository: ${{ steps.generate_tracker.outputs.project_name }}-${{ steps.timestamp.outputs.timestamp }}" >> $GITHUB_STEP_SUMMARY
           echo "- Archived docs to: processed-originals/${{ steps.generate_tracker.outputs.project_name }}-${{ steps.timestamp.outputs.timestamp }}" >> $GITHUB_STEP_SUMMARY
           echo "- Cleaned up /docs folder" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY

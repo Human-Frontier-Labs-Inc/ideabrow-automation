@@ -57,8 +57,8 @@ def initialize_repo_with_tracker(repo_url: str, tracker_path: Path, repo_name: s
     subprocess.run(["git", "init", "-b", "main"], cwd=temp_dir, check=True)
     
     # Set git user for commits
-    subprocess.run(["git", "config", "user.email", "automation@ideabrow.com"], cwd=temp_dir, check=True)
-    subprocess.run(["git", "config", "user.name", "Ideabrow Automation"], cwd=temp_dir, check=True)
+    subprocess.run(["git", "config", "user.email", "41898282+github-actions[bot]@users.noreply.github.com"], cwd=temp_dir, check=True)
+    subprocess.run(["git", "config", "user.name", "github-actions[bot]"], cwd=temp_dir, check=True)
     
     # Copy progress tracker to root
     tracker_dest = temp_dir / "PROGRESS_TRACKER.md"
