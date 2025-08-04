@@ -4,6 +4,9 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: write
+
 jobs:
   process-documentation:
     runs-on: ubuntu-latest
@@ -129,8 +132,6 @@ jobs:
       
       - name: Cleanup and commit changes
         if: steps.check_docs.outputs.docs_exists == 'true'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
         run: |
           # Configure git
           git config --global user.email "automation@ideabrow.com"
@@ -151,8 +152,7 @@ jobs:
           - Archived original docs to processed-originals/
           - Cleaned up docs folder for next automation run"
           
-          # Push changes using PAT
-          git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git
+          # Push changes (using GITHUB_TOKEN provided by permissions)
           git push origin main
       
       - name: Summary

@@ -1,4 +1,4 @@
-# Technical Requirements Document (TRD) - Version 2
+# Technical Requirements Document (TRD) - Version 3
 
 ## Overview
 
