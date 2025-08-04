@@ -1,0 +1,4 @@
+openai-agents
+PyGithub
+requests
+python-dotenv
