@@ -87,7 +87,7 @@ jobs:
       - name: Create GitHub Repository
         if: steps.detect.outputs.skip != 'true'
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_PAT }}
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
         run: |
           python automated-dev-orchestrator/scripts/create_repo.py \
             --tracker PROGRESS_TRACKER.md \

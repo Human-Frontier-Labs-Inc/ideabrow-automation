@@ -129,10 +129,10 @@ def main():
         print(f"Error: Tracker file {tracker_path} not found")
         sys.exit(1)
     
-    # Get GitHub token
-    token = os.getenv('GITHUB_TOKEN') or os.getenv('GITHUB_PAT')
+    # Get GitHub token (try multiple common names)
+    token = os.getenv('GITHUB_TOKEN') or os.getenv('GH_PAT') or os.getenv('GITHUB_PAT')
     if not token:
-        print("Error: GITHUB_TOKEN or GITHUB_PAT environment variable not set")
+        print("Error: GITHUB_TOKEN or GH_PAT environment variable not set")
         sys.exit(1)
     
     # Prepare repository name

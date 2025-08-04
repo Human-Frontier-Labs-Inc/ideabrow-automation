@@ -16,7 +16,7 @@ from typing import List
 os.environ['OPENAI_BASE_URL'] = os.getenv('OPENAI_BASE_URL', 'https://openrouter.ai/api/v1')
 
 # Model configuration
-MODEL = "anthropic/claude-3.5-sonnet"  # More reliable than glm-4.5 for complex tasks
+MODEL = "z-ai/glm-4-5"  # More reliable than glm-4.5 for complex tasks
 
 # Agent 1: Requirements Analyzer
 requirements_analyzer = Agent(
