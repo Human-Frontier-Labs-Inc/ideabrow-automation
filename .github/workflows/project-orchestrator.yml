@@ -93,7 +93,8 @@ jobs:
             --project-name "${{ steps.detect.outputs.project_name }}" \
             --org Human-Frontier-Labs-Inc \
             --webhook-url "${{ secrets.DEV_SERVER_WEBHOOK_URL }}" \
-            --metadata metadata.json
+            --metadata metadata.json \
+            --requirements-path "${{ steps.detect.outputs.project_path }}/requirements"
       
       - name: Summary
         if: steps.detect.outputs.skip != 'true'
