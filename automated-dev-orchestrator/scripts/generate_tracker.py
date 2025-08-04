@@ -108,44 +108,182 @@ def format_progress_tracker(client: OpenAI, project_name: str, plan: str, analys
         messages=[
             {
                 "role": "system",
-                "content": """Create a PROGRESS_TRACKER.md document with this exact structure:
+                "content": """You are creating a PROGRESS_TRACKER.md for an AI developer who will implement this project using Next.js.
+
+                <critical_format_requirement>
+                The FIRST LINE of your response MUST be EXACTLY in this format:
+                # Project: [Replace this with a 2-4 word project name]
                 
-                # Project: [Name]
+                DO NOT use generic names. Extract a specific, meaningful name from the requirements.
+                Examples of GOOD names: "Task Tracker", "E-Commerce Platform", "Chat Application", "Blog Engine"
+                Examples of BAD names: "Project", "Application", "System", "Software"
+                </critical_format_requirement>
+
+                <tech_stack>
+                ALL projects use this EXACT stack:
+                - Framework: Next.js 14+ (App Router)
+                - Authentication: Clerk
+                - Database: Supabase (PostgreSQL)
+                - File Storage: Supabase Storage / S3
+                - Payments: Stripe (if needed)
+                - Styling: Tailwind CSS
+                - Deployment: Vercel
+                </tech_stack>
+                
+                <required_structure>
+                # Project: [SPECIFIC NAME HERE]
                 
                 ## Overview
-                [2-3 sentence project description]
+                [2-3 sentence functional description. What does this app DO for users?]
                 
-                ## Phase 1: Foundation
+                ## Tech Stack Requirements
+                **IMPORTANT**: Before starting implementation, research current Next.js best practices and conventions as they change frequently.
+                - Framework: Next.js 14+ with App Router
+                - Auth: Clerk (refer to docs/document-X.md for auth requirements)
+                - Database: Supabase
+                - Storage: Supabase Storage/S3
+                - Payments: Stripe (if applicable)
+                
+                ## Phase 1: Foundation & Setup
                 ### Objectives
-                - [Bullet points]
+                - Set up Next.js project with TypeScript
+                - Configure Clerk authentication
+                - Initialize Supabase client and database schema
+                - Implement base layouts and routing structure
                 
-                ### Deliverables
-                - [Specific items]
+                ### Functional Requirements
+                - [Reference specific requirements from docs/document-X.md]
+                - [User should be able to...]
+                - [System should...]
                 
                 ### Success Criteria
-                - [ ] [Checkable items]
+                - [ ] Next.js app runs locally with proper TypeScript config
+                - [ ] Clerk auth flow works (sign up, sign in, sign out)
+                - [ ] Supabase connected with initial schema deployed
+                - [ ] Base routing structure matches requirements in docs/
                 
                 ## Phase 2: Core Features
-                [Same structure]
+                ### Objectives
+                - Implement primary user workflows
+                - Build main data models and API routes
+                - Create essential UI components
+                
+                ### Functional Requirements
+                - [Specific features from docs/document-X.md]
+                - [User workflows that must work]
+                - [Data operations required]
+                
+                ### Success Criteria
+                - [ ] User can [specific action from requirements]
+                - [ ] Data persists correctly in Supabase
+                - [ ] API routes handle CRUD operations
+                - [ ] UI displays real-time data updates
                 
                 ## Phase 3: Enhanced Features
-                [Same structure]
+                ### Objectives
+                - Add secondary features from requirements
+                - Implement advanced interactions
+                - Enhance user experience
+                
+                ### Functional Requirements
+                - [Additional features from docs/]
+                - [Enhanced workflows]
+                - [Performance requirements]
+                
+                ### Success Criteria
+                - [ ] [Specific enhanced feature works]
+                - [ ] Performance meets requirements
+                - [ ] Error handling implemented
                 
                 ## Phase 4: Integration & Polish
-                [Same structure]
+                ### Objectives
+                - Integrate third-party services
+                - Polish UI/UX
+                - Implement responsive design
+                
+                ### Functional Requirements
+                - [Integration requirements from docs/]
+                - [UI polish requirements]
+                - [Mobile responsiveness needs]
+                
+                ### Success Criteria
+                - [ ] Stripe payments work (if applicable)
+                - [ ] Mobile responsive on all screens
+                - [ ] Loading states and error boundaries implemented
+                - [ ] Accessibility standards met
                 
                 ## Phase 5: Testing & Deployment
-                [Same structure]
+                ### Objectives
+                - Comprehensive testing
+                - Deploy to Vercel
+                - Set up monitoring
                 
-                ## Technical Notes
-                - [Key technical decisions to be made]
-                - [Important constraints]
+                ### Functional Requirements
+                - All features from docs/ work as specified
+                - Performance requirements met
+                - Security best practices implemented
                 
-                ## User Flows
-                [Brief description of main user journeys]
+                ### Success Criteria
+                - [ ] All user flows tested and working
+                - [ ] Deployed to Vercel successfully
+                - [ ] Environment variables configured
+                - [ ] Monitoring and error tracking active
                 
-                Make it scannable by AI agents. Use consistent markdown formatting.
-                Include practical, measurable success criteria."""
+                ## Implementation Notes
+                - Check Next.js documentation for latest App Router patterns
+                - Use Server Components where possible for performance
+                - Implement proper loading.tsx and error.tsx files
+                - Follow Clerk's Next.js integration guide
+                - Use Supabase Row Level Security (RLS)
+                - Reference docs/ folder for detailed requirements
+                
+                ## Key User Flows
+                [List the main user journeys based on requirements, e.g.:]
+                1. User signs up → completes profile → accesses dashboard
+                2. [Other critical paths from requirements]
+                </required_structure>
+                
+                <instructions_for_ai_developer>
+                IMPORTANT: 
+                - NO CODE EXAMPLES in this tracker
+                - Reference the docs/ folder for detailed requirements
+                - Focus on WHAT functionality to build, not HOW
+                - Each phase should reference specific requirements from documentation
+                - Success criteria should be testable user actions
+                - Ignore compliance/legal sections unless critical to functionality
+                - If compliance is critical, add a "Compliance Notes" section at the end
+                </instructions_for_ai_developer>
+
+                <critical_guardrails>
+                ⚠️ CRITICAL: The structure above contains PLACEHOLDER EXAMPLES in square brackets [ ].
+                
+                You MUST:
+                1. REPLACE every [bracketed placeholder] with ACTUAL content from the provided requirements
+                2. NEVER leave generic placeholders like "[Specific features from docs/document-X.md]"
+                3. EXTRACT real feature names, user actions, and requirements from the documentation
+                4. Reference actual document numbers (e.g., "docs/document-1.md" not "document-X.md")
+                5. Create SPECIFIC success criteria based on the actual app functionality
+                
+                EXAMPLES OF WHAT NOT TO DO:
+                ❌ "User can [specific action from requirements]"
+                ❌ "[Additional features from docs/]"
+                ❌ "refer to docs/document-X.md"
+                
+                EXAMPLES OF WHAT TO DO:
+                ✅ "User can create and manage support tickets with video attachments"
+                ✅ "Implement real-time chat system with typing indicators (docs/document-2.md)"
+                ✅ "Senior users can schedule video calls with tech support agents"
+                
+                The placeholders are ONLY to show you the structure. You must fill them with REAL, SPECIFIC content extracted from the actual requirements provided. If you cannot extract specific requirements, you must still create concrete, actionable items based on the project type.
+                
+                VALIDATION CHECK: Before responding, verify that:
+                - Every bullet point contains specific, actionable information
+                - No square brackets remain in your response (except checkbox syntax)
+                - Document references use actual filenames
+                - Success criteria describe real user actions, not placeholders
+                </critical_guardrails>
+                
+                Start your response with "# Project: " followed by a meaningful project name extracted from the actual requirements."""
             },
             {
                 "role": "user",
