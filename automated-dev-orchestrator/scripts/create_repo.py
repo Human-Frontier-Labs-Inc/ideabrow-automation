@@ -65,26 +65,24 @@ def initialize_repo_with_tracker(repo_url: str, tracker_path: Path, repo_name: s
     with open(tracker_path, 'r') as src, open(tracker_dest, 'w') as dst:
         dst.write(src.read())
     
-    # Copy all requirements documentation to docs/ folder
+    # Copy all requirements documentation to root of repo
     if requirements_path and requirements_path.exists():
-        docs_dir = temp_dir / "docs"
-        docs_dir.mkdir(parents=True, exist_ok=True)
-        
-        # Copy all markdown files from requirements
-        for md_file in requirements_path.glob("**/*.md"):
-            dest_file = docs_dir / md_file.name
+        # Copy all markdown files from requirements to root
+        md_files = list(requirements_path.glob("**/*.md"))
+        for md_file in md_files:
+            dest_file = temp_dir / md_file.name
             with open(md_file, 'r') as src, open(dest_file, 'w') as dst:
                 dst.write(src.read())
-        print(f"✓ Copied {len(list(requirements_path.glob('**/*.md')))} documentation files to docs/")
+        print(f"✓ Copied {len(md_files)} documentation files to repository root")
     
     # Create initial README
     readme_path = temp_dir / "README.md"
     with open(readme_path, 'w') as f:
         f.write(f"# {repo_name}\n\n")
         f.write("AI-driven development project.\n\n")
-        f.write("## Project Structure\n\n")
+        f.write("## Documentation\n\n")
         f.write("- `PROGRESS_TRACKER.md` - Phased development plan\n")
-        f.write("- `docs/` - Original project requirements and specifications\n\n")
+        f.write("- `document-*.md` - Project requirements and specifications\n\n")
         f.write("## Getting Started\n\n")
         f.write("See [PROGRESS_TRACKER.md](PROGRESS_TRACKER.md) for the development roadmap.\n\n")
         f.write("---\n")
