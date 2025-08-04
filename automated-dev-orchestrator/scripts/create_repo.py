@@ -53,8 +53,12 @@ def initialize_repo_with_tracker(repo_url: str, tracker_path: Path, repo_name: s
     
     temp_dir.mkdir(parents=True)
     
-    # Initialize git repo
-    subprocess.run(["git", "init"], cwd=temp_dir, check=True)
+    # Initialize git repo with main branch
+    subprocess.run(["git", "init", "-b", "main"], cwd=temp_dir, check=True)
+    
+    # Set git user for commits
+    subprocess.run(["git", "config", "user.email", "automation@ideabrow.com"], cwd=temp_dir, check=True)
+    subprocess.run(["git", "config", "user.name", "Ideabrow Automation"], cwd=temp_dir, check=True)
     
     # Copy progress tracker
     tracker_dest = temp_dir / "PROGRESS_TRACKER.md"
@@ -73,7 +77,6 @@ def initialize_repo_with_tracker(repo_url: str, tracker_path: Path, repo_name: s
     # Git operations
     subprocess.run(["git", "add", "."], cwd=temp_dir, check=True)
     subprocess.run(["git", "commit", "-m", "Initial commit with progress tracker"], cwd=temp_dir, check=True)
-    subprocess.run(["git", "branch", "-M", "main"], cwd=temp_dir, check=True)
     subprocess.run(["git", "remote", "add", "origin", repo_url], cwd=temp_dir, check=True)
     subprocess.run(["git", "push", "-u", "origin", "main"], cwd=temp_dir, check=True)
     
