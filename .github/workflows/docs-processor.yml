@@ -14,6 +14,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       
       - name: Check if docs folder exists
         id: check_docs
@@ -54,8 +56,14 @@ jobs:
           
           # Extract project name from output
           PROJECT_NAME=$(echo "$OUTPUT" | grep "PROJECT_NAME:" | cut -d':' -f2 | xargs)
-          echo "project_name=$PROJECT_NAME" >> $GITHUB_OUTPUT
           
+          # Fallback if extraction fails
+          if [ -z "$PROJECT_NAME" ] || [ "$PROJECT_NAME" = "unnamed-project" ]; then
+            echo "Warning: Could not extract project name, using fallback"
+            PROJECT_NAME="auto-project"
+          fi
+          
+          echo "project_name=$PROJECT_NAME" >> $GITHUB_OUTPUT
           echo "Generated progress tracker for project: $PROJECT_NAME"
       
       - name: Create timestamp
@@ -155,7 +163,8 @@ jobs:
           - Archived original docs to processed-originals/
           - Cleaned up docs folder for next automation run"
           
-          # Push changes (using GITHUB_TOKEN provided by permissions)
+          # Pull latest changes and push (handle concurrent modifications)
+          git pull --rebase origin main || true
           git push origin main
       
       - name: Summary
