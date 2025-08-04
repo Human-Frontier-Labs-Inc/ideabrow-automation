@@ -135,6 +135,9 @@ def main():
         print("Error: GITHUB_TOKEN or GH_PAT environment variable not set")
         sys.exit(1)
     
+    # Strip any whitespace from token
+    token = token.strip()
+    
     # Prepare repository name
     repo_name = f"{args.project_name}-development"
     
