@@ -45,15 +45,14 @@ jobs:
       - name: Install dependencies
         if: steps.detect.outputs.skip != 'true'
         run: |
-          pip install openai-agents
+          pip install openai
           pip install PyGithub
           pip install requests
       
       - name: Generate Progress Tracker
         if: steps.detect.outputs.skip != 'true'
         env:
-          OPENAI_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-          OPENAI_BASE_URL: https://openrouter.ai/api/v1
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: |
           python automated-dev-orchestrator/scripts/generate_tracker.py \
             --project-path "${{ steps.detect.outputs.project_path }}" \

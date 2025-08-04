@@ -1,124 +1,150 @@
 #!/usr/bin/env python3
 """
-Progress Tracker Generator using OpenAI Agents SDK with OpenRouter
+Progress Tracker Generator using OpenRouter API
 Processes project requirements and generates a phased development plan
 """
 
-import asyncio
 import os
 import sys
 import argparse
 from pathlib import Path
-from agents import Agent, Runner
+from openai import OpenAI
 from typing import List
 
-# Configure OpenRouter endpoint
-os.environ['OPENAI_BASE_URL'] = os.getenv('OPENAI_BASE_URL', 'https://openrouter.ai/api/v1')
-
 # Model configuration
-MODEL = "z-ai/glm-4-5"  # More reliable than glm-4.5 for complex tasks
+MODEL = "z-ai/glm-4.5"
 
-# Agent 1: Requirements Analyzer
-requirements_analyzer = Agent(
-    name="Requirements Analyzer",
-    model=MODEL,
-    instructions="""
-    Analyze the provided project documentation and extract:
-    1. Core functionality requirements
-    2. User stories and primary workflows
-    3. Technical constraints and dependencies
-    4. Success criteria and key metrics
+def get_client():
+    """Initialize OpenRouter client"""
+    api_key = os.getenv('OPENROUTER_API_KEY') or os.getenv('OPENAI_API_KEY')
+    if not api_key:
+        raise ValueError("OPENROUTER_API_KEY or OPENAI_API_KEY environment variable not set")
     
-    Output a structured summary focusing on WHAT needs to be built, not HOW.
-    Be concise but comprehensive. Identify the MVP scope clearly.
-    """
-)
+    return OpenAI(
+        base_url="https://openrouter.ai/api/v1",
+        api_key=api_key,
+    )
 
-# Agent 2: Phase Planner
-phase_planner = Agent(
-    name="Phase Planner",
-    model=MODEL,
-    instructions="""
-    Create a phased development plan with exactly 5 phases:
-    
-    Phase 1: Foundation (Setup, core structure, basic scaffolding)
-    Phase 2: Core Features (Primary functionality, MVP features)
-    Phase 3: Enhanced Features (Secondary features, improvements)
-    Phase 4: Integration & Polish (Third-party integrations, UI polish)
-    Phase 5: Testing & Deployment (Comprehensive testing, deployment prep)
-    
-    For each phase:
-    - Clear deliverables (what will exist after this phase)
-    - Specific acceptance criteria (how to verify completion)
-    - User-visible outcomes (what users can do)
-    
-    NO CODE IMPLEMENTATION DETAILS. Focus on functional descriptions.
-    Each phase should be independently testable and deployable.
-    """
-)
+def analyze_requirements(client: OpenAI, requirements: str) -> str:
+    """Analyze requirements and extract key information"""
+    response = client.chat.completions.create(
+        model=MODEL,
+        messages=[
+            {
+                "role": "system",
+                "content": """You are a requirements analyst. Analyze the provided project documentation and extract:
+                1. Core functionality requirements
+                2. User stories and primary workflows
+                3. Technical constraints and dependencies
+                4. Success criteria and key metrics
+                
+                Output a structured summary focusing on WHAT needs to be built, not HOW.
+                Be concise but comprehensive. Identify the MVP scope clearly."""
+            },
+            {
+                "role": "user",
+                "content": requirements
+            }
+        ],
+        extra_headers={
+            "HTTP-Referer": "https://github.com/Human-Frontier-Labs-Inc/ideabrow-automation",
+            "X-Title": "Ideabrow Automation",
+        }
+    )
+    return response.choices[0].message.content
 
-# Agent 3: Progress Tracker Formatter
-tracker_formatter = Agent(
-    name="Tracker Formatter",
-    model=MODEL,
-    instructions="""
-    Create a PROGRESS_TRACKER.md document with this exact structure:
-    
-    # Project: [Name]
-    
-    ## Overview
-    [2-3 sentence project description]
-    
-    ## Phase 1: Foundation
-    ### Objectives
-    - [Bullet points]
-    
-    ### Deliverables
-    - [Specific items]
-    
-    ### Success Criteria
-    - [ ] [Checkable items]
-    
-    ## Phase 2: Core Features
-    [Same structure]
-    
-    ## Phase 3: Enhanced Features
-    [Same structure]
-    
-    ## Phase 4: Integration & Polish
-    [Same structure]
-    
-    ## Phase 5: Testing & Deployment
-    [Same structure]
-    
-    ## Technical Notes
-    - [Key technical decisions to be made]
-    - [Important constraints]
-    
-    ## User Flows
-    [Brief description of main user journeys]
-    
-    Make it scannable by AI agents. Use consistent markdown formatting.
-    Include practical, measurable success criteria.
-    """
-)
+def create_phased_plan(client: OpenAI, analysis: str) -> str:
+    """Create a phased development plan"""
+    response = client.chat.completions.create(
+        model=MODEL,
+        messages=[
+            {
+                "role": "system", 
+                "content": """Create a phased development plan with exactly 5 phases:
+                
+                Phase 1: Foundation (Setup, core structure, basic scaffolding)
+                Phase 2: Core Features (Primary functionality, MVP features)
+                Phase 3: Enhanced Features (Secondary features, improvements)
+                Phase 4: Integration & Polish (Third-party integrations, UI polish)
+                Phase 5: Testing & Deployment (Comprehensive testing, deployment prep)
+                
+                For each phase:
+                - Clear deliverables (what will exist after this phase)
+                - Specific acceptance criteria (how to verify completion)
+                - User-visible outcomes (what users can do)
+                
+                NO CODE IMPLEMENTATION DETAILS. Focus on functional descriptions.
+                Each phase should be independently testable and deployable."""
+            },
+            {
+                "role": "user",
+                "content": f"Based on this analysis, create a phased development plan:\n\n{analysis}"
+            }
+        ],
+        extra_headers={
+            "HTTP-Referer": "https://github.com/Human-Frontier-Labs-Inc/ideabrow-automation",
+            "X-Title": "Ideabrow Automation",
+        }
+    )
+    return response.choices[0].message.content
 
-# Orchestrator Agent
-orchestrator = Agent(
-    name="Project Orchestrator",
-    model=MODEL,
-    instructions="""
-    You coordinate the analysis and planning of software projects.
-    Process requirements through the specialist agents in sequence:
-    1. First analyze requirements
-    2. Then create phased plan
-    3. Finally format as progress tracker
-    
-    Ensure the final output is practical and actionable for AI developers.
-    """,
-    handoffs=[requirements_analyzer, phase_planner, tracker_formatter]
-)
-
+def format_progress_tracker(client: OpenAI, project_name: str, plan: str, analysis: str) -> str:
+    """Format the final progress tracker document"""
+    response = client.chat.completions.create(
+        model=MODEL,
+        messages=[
+            {
+                "role": "system",
+                "content": """Create a PROGRESS_TRACKER.md document with this exact structure:
+                
+                # Project: [Name]
+                
+                ## Overview
+                [2-3 sentence project description]
+                
+                ## Phase 1: Foundation
+                ### Objectives
+                - [Bullet points]
+                
+                ### Deliverables
+                - [Specific items]
+                
+                ### Success Criteria
+                - [ ] [Checkable items]
+                
+                ## Phase 2: Core Features
+                [Same structure]
+                
+                ## Phase 3: Enhanced Features
+                [Same structure]
+                
+                ## Phase 4: Integration & Polish
+                [Same structure]
+                
+                ## Phase 5: Testing & Deployment
+                [Same structure]
+                
+                ## Technical Notes
+                - [Key technical decisions to be made]
+                - [Important constraints]
+                
+                ## User Flows
+                [Brief description of main user journeys]
+                
+                Make it scannable by AI agents. Use consistent markdown formatting.
+                Include practical, measurable success criteria."""
+            },
+            {
+                "role": "user",
+                "content": f"Project: {project_name}\n\nPlan:\n{plan}\n\nAnalysis:\n{analysis}"
+            }
+        ],
+        extra_headers={
+            "HTTP-Referer": "https://github.com/Human-Frontier-Labs-Inc/ideabrow-automation",
+            "X-Title": "Ideabrow Automation",
+        }
+    )
+    return response.choices[0].message.content
 
 async def read_requirements(project_path: Path) -> str:
     """Read all markdown files from the requirements directory"""
@@ -139,25 +165,25 @@ async def read_requirements(project_path: Path) -> str:
     
     return "\n\n---\n\n".join(requirements)
 
-
-async def generate_progress_tracker(requirements: str) -> str:
-    """Generate progress tracker using agent pipeline"""
-    print("\nStarting agent pipeline...")
+async def generate_progress_tracker(requirements: str, project_name: str) -> str:
+    """Generate progress tracker using sequential API calls"""
+    print("\nStarting generation pipeline...")
     
-    prompt = f"""
-    Process these project requirements and create a comprehensive progress tracker.
-    The tracker should guide an AI developer through building this application.
+    client = get_client()
     
-    REQUIREMENTS:
+    # Step 1: Analyze requirements
+    print("Step 1: Analyzing requirements...")
+    analysis = analyze_requirements(client, requirements)
     
-    {requirements}
+    # Step 2: Create phased plan
+    print("Step 2: Creating phased development plan...")
+    plan = create_phased_plan(client, analysis)
     
-    Create a phased development plan that is clear, actionable, and measurable.
-    """
+    # Step 3: Format tracker
+    print("Step 3: Formatting progress tracker...")
+    tracker = format_progress_tracker(client, project_name, plan, analysis)
     
-    result = await Runner.run(orchestrator, prompt)
-    return result.final_output
-
+    return tracker
 
 async def main():
     parser = argparse.ArgumentParser(description='Generate progress tracker from requirements')
@@ -185,7 +211,7 @@ async def main():
         requirements = await read_requirements(project_path)
         
         # Generate tracker
-        tracker_content = await generate_progress_tracker(requirements)
+        tracker_content = await generate_progress_tracker(requirements, project_name)
         
         # Save to file
         output_path = Path(args.output)
@@ -200,12 +226,13 @@ async def main():
         print(f"Error generating tracker: {e}")
         sys.exit(1)
 
-
 if __name__ == "__main__":
+    import asyncio
+    
     # Ensure API key is set
-    if not os.getenv('OPENAI_API_KEY'):
-        print("Error: OPENAI_API_KEY environment variable not set")
-        print("Set your OpenRouter API key: export OPENAI_API_KEY=sk-or-...")
+    if not os.getenv('OPENROUTER_API_KEY') and not os.getenv('OPENAI_API_KEY'):
+        print("Error: OPENROUTER_API_KEY or OPENAI_API_KEY environment variable not set")
+        print("Set your OpenRouter API key: export OPENROUTER_API_KEY=sk-or-...")
         sys.exit(1)
     
     asyncio.run(main())
