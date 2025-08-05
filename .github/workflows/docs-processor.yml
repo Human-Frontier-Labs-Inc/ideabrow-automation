@@ -49,7 +49,7 @@ jobs:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: |
           # Generate tracker and extract project name
-          OUTPUT=$(python automated-dev-orchestrator/scripts/generate_tracker.py \
+          OUTPUT=$(python automated-dev-orchestrator/scripts/generate_tracker_template_aware.py \
             --project-path docs \
             --output PROGRESS_TRACKER.md \
             --extract-project-name)
