@@ -34,12 +34,16 @@ def analyze_requirements(client: OpenAI, requirements: str) -> str:
                 "role": "system",
                 "content": """You are a requirements analyst. Analyze the provided project documentation and extract:
                 1. Core functionality requirements
-                2. User stories and primary workflows
+                2. User stories and primary workflows  
                 3. Technical constraints and dependencies
                 4. Success criteria and key metrics
+                5. Primary application category (e.g., e-commerce, blog, social media, real-time chat, SaaS dashboard, marketplace, etc.)
                 
                 Output a structured summary focusing on WHAT needs to be built, not HOW.
-                Be concise but comprehensive. Identify the MVP scope clearly."""
+                Be concise but comprehensive. Identify the MVP scope clearly.
+                
+                IMPORTANT: Since all projects use Clerk authentication, Supabase database, and Next.js 14+, 
+                emphasize the primary use case and application type to help with template selection."""
             },
             {
                 "role": "user",
@@ -134,7 +138,7 @@ def format_progress_tracker(client: OpenAI, project_name: str, plan: str, analys
                 # Project: [SPECIFIC NAME HERE]
                 
                 ## Overview
-                [2-3 sentence functional description. What does this app DO for users?]
+                [2-3 sentence functional description. What does this app DO for users? Include the primary use case category if relevant: e-commerce, blog, social media, real-time chat, SaaS dashboard, etc.]
                 
                 ## Tech Stack Requirements
                 **IMPORTANT**: Before starting implementation, research current Next.js best practices and conventions as they change frequently.
