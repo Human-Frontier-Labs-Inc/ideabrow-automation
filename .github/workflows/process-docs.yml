@@ -28,19 +28,50 @@ jobs:
             echo "No docs found"
           fi
       
+      - name: Setup Python
+        if: steps.check_docs.outputs.has_docs == 'true'
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        if: steps.check_docs.outputs.has_docs == 'true'
+        run: |
+          pip install openai requests python-dotenv
+      
+      - name: Generate AI Progress Tracker and Extract Project Name
+        if: steps.check_docs.outputs.has_docs == 'true'
+        id: generate_tracker
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: |
+          # Generate tracker using AI and extract project name
+          OUTPUT=$(python automated-dev-orchestrator/scripts/generate_tracker_template_aware.py \
+            --project-path docs \
+            --output PROGRESS_TRACKER.md \
+            --extract-project-name)
+          
+          # Extract project name from output
+          PROJECT_NAME=$(echo "$OUTPUT" | grep "PROJECT_NAME:" | cut -d':' -f2 | xargs)
+          
+          # Fallback if extraction fails
+          if [ -z "$PROJECT_NAME" ] || [ "$PROJECT_NAME" = "unnamed-project" ]; then
+            echo "Warning: Could not extract project name, using fallback"
+            PROJECT_NAME="auto-project"
+          fi
+          
+          echo "project_name=$PROJECT_NAME" >> $GITHUB_OUTPUT
+          echo "Generated AI progress tracker for project: $PROJECT_NAME"
+          
+          # Read the generated tracker content
+          TRACKER_CONTENT=$(cat PROGRESS_TRACKER.md | sed 's/$/\\n/' | tr -d '\n')
+          echo "tracker_content=$TRACKER_CONTENT" >> $GITHUB_OUTPUT
+      
       - name: Process docs and create project
         if: steps.check_docs.outputs.has_docs == 'true'
         run: |
-          # Extract project name from first doc
-          FIRST_DOC=$(ls docs/*.md | head -1)
-          if [ -f "$FIRST_DOC" ]; then
-            PROJECT_NAME=$(grep "^# " "$FIRST_DOC" | head -1 | sed 's/^# //' | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g' | sed 's/-\+/-/g' | sed 's/^-//' | sed 's/-$//')
-          fi
-          
-          # Fallback if no name found
-          if [ -z "$PROJECT_NAME" ]; then
-            PROJECT_NAME="auto-project"
-          fi
+          # Use AI-generated project name
+          PROJECT_NAME="${{ steps.generate_tracker.outputs.project_name }}"
           
           # Create unique name with timestamp
           TIMESTAMP=$(date +%Y-%m-%d-%H%M%S)
@@ -59,10 +90,16 @@ jobs:
           fi
           
           # Prepare webhook payload - escape quotes and newlines properly
+          FIRST_DOC=$(ls docs/*.md | head -1)
           REQUIREMENTS=$(head -100 "$FIRST_DOC" | sed 's/"/\\"/g' | awk '{printf "%s\\n", $0}' | head -c 500)
           
-          # Create progress tracker content
-          TRACKER_CONTENT="# Project Progress Tracker\n\n## Phase 1: Template Analysis\n- Analyze provided template\n- Understand existing features\n- Plan extensions\n\n## Phase 2: Core Features\n- Implement main functionality\n- Set up database schema\n- Create API endpoints\n\n## Phase 3: Enhancements\n- Add advanced features\n- Optimize performance\n- Integrate third-party services\n\n## Phase 4: Testing & Polish\n- Write comprehensive tests\n- Fix bugs\n- Improve UI/UX\n\n## Phase 5: Documentation & Deploy\n- Complete documentation\n- Final review\n- Deploy to production"
+          # Use the AI-generated progress tracker content
+          TRACKER_CONTENT="${{ steps.generate_tracker.outputs.tracker_content }}"
+          
+          # If tracker is empty for some reason, use fallback
+          if [ -z "$TRACKER_CONTENT" ]; then
+            TRACKER_CONTENT="# Project Progress Tracker\n\n## Phase 1: Setup\n## Phase 2: Core Features\n## Phase 3: Enhancements\n## Phase 4: Testing\n## Phase 5: Deploy"
+          fi
           
           # Debug: Check if secrets are available
           echo "Checking secrets..."
@@ -89,6 +126,11 @@ jobs:
           # Archive processed docs
           mkdir -p "processed/${UNIQUE_NAME}"
           cp -r docs/* "processed/${UNIQUE_NAME}/"
+          
+          # Copy the AI-generated progress tracker
+          if [ -f "PROGRESS_TRACKER.md" ]; then
+            cp PROGRESS_TRACKER.md "processed/${UNIQUE_NAME}/"
+          fi
           
           # Create summary file
           cat > "processed/${UNIQUE_NAME}/PROCESSING_SUMMARY.md" << EOF
