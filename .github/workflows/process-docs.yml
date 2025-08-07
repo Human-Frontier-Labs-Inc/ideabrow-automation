@@ -148,18 +148,16 @@ jobs:
             fi
             
             # Create a minimal package.json to prevent npm errors
-            cat > package.json << 'PACKAGE_EOF'
-{
-  "name": "project",
-  "version": "0.1.0",
-  "private": true,
-  "scripts": {
-    "dev": "echo 'Template will be added by tmux automation'",
-    "build": "echo 'Template will be added by tmux automation'",
-    "start": "echo 'Template will be added by tmux automation'"
-  }
-}
-PACKAGE_EOF
+            echo '{' > package.json
+            echo '  "name": "project",' >> package.json
+            echo '  "version": "0.1.0",' >> package.json
+            echo '  "private": true,' >> package.json
+            echo '  "scripts": {' >> package.json
+            echo '    "dev": "echo Template will be added by tmux automation",' >> package.json
+            echo '    "build": "echo Template will be added by tmux automation",' >> package.json
+            echo '    "start": "echo Template will be added by tmux automation"' >> package.json
+            echo '  }' >> package.json
+            echo '}' >> package.json
             
             # Create initial README if no docs exist
             if [ ! -f "README.md" ]; then
