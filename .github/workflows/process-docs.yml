@@ -37,7 +37,7 @@ jobs:
       - name: Install dependencies
         if: steps.check_docs.outputs.has_docs == 'true'
         run: |
-          pip install openai requests python-dotenv
+          pip3 install openai requests python-dotenv
       
       - name: Generate AI Progress Tracker and Extract Project Name
         if: steps.check_docs.outputs.has_docs == 'true'
@@ -46,7 +46,7 @@ jobs:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: |
           # Generate tracker using AI and extract project name
-          OUTPUT=$(python automated-dev-orchestrator/scripts/generate_tracker_template_aware.py \
+          OUTPUT=$(python3 automated-dev-orchestrator/scripts/generate_tracker_template_aware.py \
             --project-path docs \
             --output PROGRESS_TRACKER.md \
             --extract-project-name)
