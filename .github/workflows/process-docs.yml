@@ -45,11 +45,60 @@ jobs:
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: |
-          # Generate tracker using AI and extract project name
+          # Debug: Check if API key is configured
+          if [ -z "$OPENROUTER_API_KEY" ]; then
+            echo "ERROR: OPENROUTER_API_KEY is not configured!"
+            echo "Falling back to default tracker"
+            PROJECT_NAME="auto-project-$(date +%s)"
+            echo "project_name=$PROJECT_NAME" >> $GITHUB_OUTPUT
+            echo "# Progress Tracker\n\n## Phase 1: Setup\n## Phase 2: Development" > PROGRESS_TRACKER.md
+            TRACKER_CONTENT=$(cat PROGRESS_TRACKER.md | sed 's/$/\\n/' | tr -d '\n')
+            echo "tracker_content=$TRACKER_CONTENT" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          # Debug: Check if script exists
+          if [ ! -f "automated-dev-orchestrator/scripts/generate_tracker_template_aware.py" ]; then
+            echo "ERROR: Tracker generation script not found!"
+            echo "Looking for script in:"
+            ls -la automated-dev-orchestrator/scripts/ 2>/dev/null || echo "Directory doesn't exist"
+            echo "Current directory contents:"
+            ls -la
+            PROJECT_NAME="auto-project-$(date +%s)"
+            echo "project_name=$PROJECT_NAME" >> $GITHUB_OUTPUT
+            echo "# Progress Tracker\n\n## Phase 1: Setup\n## Phase 2: Development" > PROGRESS_TRACKER.md
+            TRACKER_CONTENT=$(cat PROGRESS_TRACKER.md | sed 's/$/\\n/' | tr -d '\n')
+            echo "tracker_content=$TRACKER_CONTENT" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          # Debug: Show Python version and packages
+          echo "Python version:"
+          python3 --version
+          echo "Installed packages:"
+          pip3 list | grep -E "openai|requests|python-dotenv" || echo "No matching packages found"
+          
+          # Generate tracker using AI and extract project name with error handling
+          echo "Running tracker generation script..."
           OUTPUT=$(python3 automated-dev-orchestrator/scripts/generate_tracker_template_aware.py \
             --project-path docs \
             --output PROGRESS_TRACKER.md \
-            --extract-project-name)
+            --extract-project-name 2>&1) || {
+            EXIT_CODE=$?
+            echo "ERROR: Tracker generation failed with exit code $EXIT_CODE"
+            echo "Full output:"
+            echo "$OUTPUT"
+            echo "Using fallback values..."
+            PROJECT_NAME="auto-project-$(date +%s)"
+            echo "project_name=$PROJECT_NAME" >> $GITHUB_OUTPUT
+            echo "# Progress Tracker\n\n## Phase 1: Setup\n## Phase 2: Development" > PROGRESS_TRACKER.md
+            TRACKER_CONTENT=$(cat PROGRESS_TRACKER.md | sed 's/$/\\n/' | tr -d '\n')
+            echo "tracker_content=$TRACKER_CONTENT" >> $GITHUB_OUTPUT
+            exit 0
+          }
+          
+          echo "Script output:"
+          echo "$OUTPUT"
           
           # Extract project name from output
           PROJECT_NAME=$(echo "$OUTPUT" | grep "PROJECT_NAME:" | cut -d':' -f2 | xargs)
@@ -57,14 +106,20 @@ jobs:
           # Fallback if extraction fails
           if [ -z "$PROJECT_NAME" ] || [ "$PROJECT_NAME" = "unnamed-project" ]; then
             echo "Warning: Could not extract project name, using fallback"
-            PROJECT_NAME="auto-project"
+            PROJECT_NAME="auto-project-$(date +%s)"
           fi
           
           echo "project_name=$PROJECT_NAME" >> $GITHUB_OUTPUT
           echo "Generated AI progress tracker for project: $PROJECT_NAME"
           
-          # Read the generated tracker content
-          TRACKER_CONTENT=$(cat PROGRESS_TRACKER.md | sed 's/$/\\n/' | tr -d '\n')
+          # Read the generated tracker content if file exists
+          if [ -f "PROGRESS_TRACKER.md" ]; then
+            TRACKER_CONTENT=$(cat PROGRESS_TRACKER.md | sed 's/$/\\n/' | tr -d '\n')
+          else
+            echo "Warning: PROGRESS_TRACKER.md not created, using fallback"
+            echo "# Progress Tracker\n\n## Phase 1: Setup\n## Phase 2: Development" > PROGRESS_TRACKER.md
+            TRACKER_CONTENT=$(cat PROGRESS_TRACKER.md | sed 's/$/\\n/' | tr -d '\n')
+          fi
           echo "tracker_content=$TRACKER_CONTENT" >> $GITHUB_OUTPUT
       
       - name: Process docs and create project
