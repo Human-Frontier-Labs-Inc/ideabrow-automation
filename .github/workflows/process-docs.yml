@@ -30,7 +30,14 @@ jobs:
         run: |
           # Extract project name from first doc
           FIRST_DOC=$(ls docs/*.md | head -1)
-          PROJECT_NAME=$(grep "^# " "$FIRST_DOC" | head -1 | sed 's/^# //' | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g' | sed 's/-\+/-/g' | sed 's/^-//' | sed 's/-$//')
+          if [ -f "$FIRST_DOC" ]; then
+            PROJECT_NAME=$(grep "^# " "$FIRST_DOC" | head -1 | sed 's/^# //' | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g' | sed 's/-\+/-/g' | sed 's/^-//' | sed 's/-$//')
+          fi
+          
+          # Fallback if no name found
+          if [ -z "$PROJECT_NAME" ]; then
+            PROJECT_NAME="auto-project"
+          fi
           
           # Create unique name with timestamp
           TIMESTAMP=$(date +%Y-%m-%d-%H%M%S)
@@ -41,50 +48,27 @@ jobs:
           # Create new repository
           gh repo create "Human-Frontier-Labs-Inc/${UNIQUE_NAME}" --private --description "Auto-generated from ideabrow-automation"
           
-          # Prepare webhook payload
-          REQUIREMENTS=$(head -100 "$FIRST_DOC" | tr '\n' ' ')
+          # Prepare webhook payload - escape quotes and newlines properly
+          REQUIREMENTS=$(head -100 "$FIRST_DOC" | sed 's/"/\\"/g' | awk '{printf "%s\\n", $0}' | head -c 500)
           
-          # Create progress tracker
-          cat > progress_tracker.md << 'EOF'
-          # Project Progress Tracker
+          # Create progress tracker content
+          TRACKER_CONTENT="# Project Progress Tracker\n\n## Phase 1: Template Analysis\n- Analyze provided template\n- Understand existing features\n- Plan extensions\n\n## Phase 2: Core Features\n- Implement main functionality\n- Set up database schema\n- Create API endpoints\n\n## Phase 3: Enhancements\n- Add advanced features\n- Optimize performance\n- Integrate third-party services\n\n## Phase 4: Testing & Polish\n- Write comprehensive tests\n- Fix bugs\n- Improve UI/UX\n\n## Phase 5: Documentation & Deploy\n- Complete documentation\n- Final review\n- Deploy to production"
           
-          ## Phase 1: Template Analysis
-          - Analyze provided template
-          - Understand existing features
-          - Plan extensions
-          
-          ## Phase 2: Core Features
-          - Implement main functionality
-          - Set up database schema
-          - Create API endpoints
-          
-          ## Phase 3: Enhancements
-          - Add advanced features
-          - Optimize performance
-          - Integrate third-party services
-          
-          ## Phase 4: Testing & Polish
-          - Write comprehensive tests
-          - Fix bugs
-          - Improve UI/UX
-          
-          ## Phase 5: Documentation & Deploy
-          - Complete documentation
-          - Final review
-          - Deploy to production
-          EOF
-          
-          # Send webhook to our server
-          curl -X POST "${{ secrets.WEBHOOK_URL }}" \
-            -H "Content-Type: application/json" \
-            -d "{
-              \"project_name\": \"${UNIQUE_NAME}\",
-              \"github_repo\": \"git@github.com:Human-Frontier-Labs-Inc/${UNIQUE_NAME}.git\",
-              \"requirements_summary\": \"${REQUIREMENTS}\",
-              \"progress_tracker\": \"$(cat progress_tracker.md | sed 's/$/\\n/' | tr -d '\n')\",
-              \"starter_prompt\": \"Let's build ${PROJECT_NAME}. Start by analyzing the template and requirements.\",
-              \"template_hint\": \"modern-saas/nextjs-clerk\"
-            }"
+          # Send webhook to our server (if configured)
+          if [ -n "${{ secrets.WEBHOOK_URL }}" ]; then
+            curl -X POST "${{ secrets.WEBHOOK_URL }}" \
+              -H "Content-Type: application/json" \
+              -d "{
+                \"project_name\": \"${UNIQUE_NAME}\",
+                \"github_repo\": \"git@github.com:Human-Frontier-Labs-Inc/${UNIQUE_NAME}.git\",
+                \"requirements_summary\": \"${REQUIREMENTS}\",
+                \"progress_tracker\": \"${TRACKER_CONTENT}\",
+                \"starter_prompt\": \"Let's build ${PROJECT_NAME}. Start by analyzing the template and requirements.\",
+                \"template_hint\": \"modern-saas/nextjs-clerk\"
+              }"
+          else
+            echo "No webhook URL configured, skipping webhook"
+          fi
           
           # Archive processed docs
           mkdir -p "processed/${UNIQUE_NAME}"
