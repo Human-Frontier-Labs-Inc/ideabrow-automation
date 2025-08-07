@@ -139,13 +139,27 @@ jobs:
             git config user.name "GitHub Actions"
             git config user.email "actions@github.com"
             
-            # Copy docs and tracker to new repo
+            # Copy docs to new repo
             cp -r "$GITHUB_WORKSPACE/docs"/* . 2>/dev/null || echo "No docs to copy"
             
             # Copy the AI-generated progress tracker
             if [ -f "$GITHUB_WORKSPACE/PROGRESS_TRACKER.md" ]; then
               cp "$GITHUB_WORKSPACE/PROGRESS_TRACKER.md" .
             fi
+            
+            # Create a minimal package.json to prevent npm errors
+            cat > package.json << 'PACKAGE_EOF'
+{
+  "name": "project",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "echo 'Template will be added by tmux automation'",
+    "build": "echo 'Template will be added by tmux automation'",
+    "start": "echo 'Template will be added by tmux automation'"
+  }
+}
+PACKAGE_EOF
             
             # Create initial README if no docs exist
             if [ ! -f "README.md" ]; then
