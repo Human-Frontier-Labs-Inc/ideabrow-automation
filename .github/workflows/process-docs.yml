@@ -66,13 +66,13 @@ jobs:
           
           # Debug: Check if secrets are available
           echo "Checking secrets..."
-          echo "WEBHOOK_URL is $([ -n "${{ secrets.WEBHOOK_URL }}" ] && echo "configured" || echo "NOT configured")"
+          echo "DEV_SERVER_WEBHOOK_URL is $([ -n "${{ secrets.DEV_SERVER_WEBHOOK_URL }}" ] && echo "configured" || echo "NOT configured")"
           echo "GH_PAT is $([ -n "${{ secrets.GH_PAT }}" ] && echo "configured" || echo "NOT configured")"
           
           # Send webhook to our server (if configured)
-          if [ -n "${{ secrets.WEBHOOK_URL }}" ]; then
-            echo "Sending webhook to: ${{ secrets.WEBHOOK_URL }}"
-            curl -X POST "${{ secrets.WEBHOOK_URL }}" \
+          if [ -n "${{ secrets.DEV_SERVER_WEBHOOK_URL }}" ]; then
+            echo "Sending webhook to: ${{ secrets.DEV_SERVER_WEBHOOK_URL }}"
+            curl -X POST "${{ secrets.DEV_SERVER_WEBHOOK_URL }}" \
               -H "Content-Type: application/json" \
               -d "{
                 \"project_name\": \"${UNIQUE_NAME}\",
@@ -83,7 +83,7 @@ jobs:
                 \"template_hint\": \"modern-saas/nextjs-clerk\"
               }" || echo "Webhook failed, continuing..."
           else
-            echo "No webhook URL configured, skipping webhook"
+            echo "No DEV_SERVER_WEBHOOK_URL configured, skipping webhook"
           fi
           
           # Archive processed docs
@@ -97,7 +97,7 @@ jobs:
           - **Project Name**: ${UNIQUE_NAME}
           - **Repository**: ${REPO_URL}
           - **Processed At**: $(date)
-          - **Webhook Sent**: $([ -n "${{ secrets.WEBHOOK_URL }}" ] && echo "Yes" || echo "No")
+          - **Webhook Sent**: $([ -n "${{ secrets.DEV_SERVER_WEBHOOK_URL }}" ] && echo "Yes" || echo "No")
           EOF
           
           # Remove docs to prevent re-processing

@@ -17,3 +17,5 @@
 - Team productivity metrics
 - Standup report generation
 - Sprint retrospective data
+## Analytics Dashboard
+- Real-time metrics display
