@@ -123,9 +123,53 @@ jobs:
             echo "No DEV_SERVER_WEBHOOK_URL configured, skipping webhook"
           fi
           
-          # Archive processed docs
+          # Push initial content to the new repository
+          if [ -n "${{ secrets.GH_PAT }}" ]; then
+            echo "Pushing initial content to new repository..."
+            
+            # Create a temporary directory for the new repo
+            TEMP_DIR=$(mktemp -d)
+            cd "$TEMP_DIR"
+            
+            # Initialize new repo and add remote
+            git init
+            git remote add origin "$REPO_URL"
+            
+            # Configure git
+            git config user.name "GitHub Actions"
+            git config user.email "actions@github.com"
+            
+            # Copy docs and tracker to new repo
+            cp -r "$GITHUB_WORKSPACE/docs"/* . 2>/dev/null || echo "No docs to copy"
+            
+            # Copy the AI-generated progress tracker
+            if [ -f "$GITHUB_WORKSPACE/PROGRESS_TRACKER.md" ]; then
+              cp "$GITHUB_WORKSPACE/PROGRESS_TRACKER.md" .
+            fi
+            
+            # Create initial README if no docs exist
+            if [ ! -f "README.md" ]; then
+              echo "# ${PROJECT_NAME}" > README.md
+              echo "" >> README.md
+              echo "Auto-generated project from ideabrow-automation" >> README.md
+              echo "" >> README.md
+              echo "Created: $(date)" >> README.md
+            fi
+            
+            # Commit and push to new repo
+            git add .
+            git commit -m "Initial commit with progress tracker" || echo "Nothing to commit"
+            git branch -M main
+            git push -u origin main || echo "Push to new repo failed"
+            
+            # Return to original directory
+            cd "$GITHUB_WORKSPACE"
+            rm -rf "$TEMP_DIR"
+          fi
+          
+          # Archive processed docs locally
           mkdir -p "processed/${UNIQUE_NAME}"
-          cp -r docs/* "processed/${UNIQUE_NAME}/"
+          cp -r docs/* "processed/${UNIQUE_NAME}/" 2>/dev/null || true
           
           # Copy the AI-generated progress tracker
           if [ -f "PROGRESS_TRACKER.md" ]; then
@@ -145,7 +189,7 @@ jobs:
           # Remove docs to prevent re-processing
           rm -rf docs/*
           
-          # Commit the changes
+          # Commit the changes to ideabrow-automation repo
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
           git add .

@@ -1,6 +1,6 @@
 # Enhanced Webhook Server
 
-An improved webhook server extracted from tmux-automation with deduplication, state management, and cooldown protection.
+Production-ready webhook server for ideabrow-automation pipeline with deduplication, state management, and intelligent template selection.
 
 ## Features
 
@@ -11,6 +11,7 @@ An improved webhook server extracted from tmux-automation with deduplication, st
 - **Full Timestamp Support**: No truncation of project names with timestamps
 - **Enhanced Error Handling**: Better logging and error responses
 - **Admin Endpoints**: State inspection and cleanup capabilities
+- **Template Selection**: Intelligent selection from 41+ templates (always uses Clerk auth)
 
 ### Phase Scheduler Integration
 - Maintains nohup-based phase scheduling for persistence
@@ -38,21 +39,26 @@ webhook-server/
     └── project_cooldowns.json
 ```
 
-## Setup
+## Deployment
 
-1. **Virtual Environment** (already created):
-   ```bash
-   cd /home/wv3/ideabrow-pipeline
-   python3 -m venv venv
-   source venv/bin/activate
-   pip install flask requests
-   ```
+### Quick Start
+```bash
+# Start webhook server on port 5000
+cd /home/wv3/ideabrow-automation/webhook-server
+nohup python3 webhook_server.py > webhook_server.log 2>&1 &
 
-2. **Start Server**:
-   ```bash
-   cd /home/wv3/ideabrow-pipeline/webhook-server
-   ./start_server.sh
-   ```
+# Create cloudflared tunnel for GitHub webhook
+cloudflared tunnel --url http://localhost:5000
+
+# Update GitHub secret with tunnel URL (copy URL from cloudflared output)
+gh secret set DEV_SERVER_WEBHOOK_URL --body "https://your-url.trycloudflare.com" \
+  --repo Human-Frontier-Labs-Inc/ideabrow-automation
+```
+
+### Port Configuration
+- **Default Port**: 5000
+- **Alternative Ports**: 5001-5010 (for multiple instances)
+- **Set custom port**: `PORT=5001 python3 webhook_server.py`
 
 ## API Endpoints
 
@@ -91,7 +97,8 @@ webhook-server/
 ## Configuration
 
 Environment variables:
-- `WEBHOOK_PORT` - Server port (default: 8090)
+- `PORT` - Server port (default: 5000)
+- `WEBHOOK_PORT` - Alternative port variable (default: 5000)
 
 Internal settings in `webhook_server.py`:
 - `COOLDOWN_MINUTES` - Cooldown period (default: 5)
@@ -134,15 +141,25 @@ Works with:
 
 Check server health:
 ```bash
-curl http://localhost:8090/health
+curl http://localhost:5000/health
 ```
 
 View state statistics:  
 ```bash
-curl http://localhost:8090/admin/state
+curl http://localhost:5000/admin/state
 ```
 
 Monitor logs:
 ```bash
-tail -f /home/wv3/ideabrow-pipeline/webhook-server/logs/webhook.log
+tail -f /home/wv3/ideabrow-automation/webhook-server/logs/webhook.log
+```
+
+Check running process:
+```bash
+ps aux | grep webhook_server
+```
+
+View created tmux sessions:
+```bash
+tmux ls | grep "2025-"
 ```
