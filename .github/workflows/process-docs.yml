@@ -126,6 +126,7 @@ jobs:
         if: steps.check_docs.outputs.has_docs == 'true'
         env:
           GH_PAT: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
         run: |
           # Use AI-generated project name
           PROJECT_NAME="${{ steps.generate_tracker.outputs.project_name }}"
