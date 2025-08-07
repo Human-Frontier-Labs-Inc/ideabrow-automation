@@ -21,11 +21,20 @@ import time
 # Add scripts directory to path
 sys.path.append(str(Path(__file__).parent.parent / "scripts"))
 try:
-    from select_template import select_template
+    from select_template_enhanced import select_template
 except ImportError:
-    # Fallback - create dummy function if script not available
-    def select_template(requirements='', template_hint=None):
-        return {'template': 'nextjs-basic', 'full_path': '/home/wv3/templates/nextjs-basic'}
+    try:
+        from select_template import select_template
+    except ImportError:
+        # Fallback - create dummy function if script not available
+        def select_template(requirements='', template_hint=None):
+            return {
+                'template': 'modern-saas/nextjs-saas-clerk', 
+                'full_path': '/home/wv3/templates/modern-saas/nextjs-saas-clerk',
+                'auth': 'Clerk',
+                'database': 'Prisma/SQLite',
+                'ui': 'shadcn/ui'
+            }
 
 # Add current directory to path for local modules
 sys.path.append(str(Path(__file__).parent))

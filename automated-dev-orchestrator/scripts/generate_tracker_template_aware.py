@@ -155,7 +155,7 @@ def format_progress_tracker(client: OpenAI, project_name: str, plan: str, analys
                 <critical_context>
                 THE PROJECT USES A PRE-BUILT TEMPLATE THAT ALREADY INCLUDES:
                 - Next.js 14+ with App Router fully configured
-                - Authentication system (Clerk/Auth.js) already integrated
+                - Authentication system (Clerk) already integrated
                 - Database (Prisma/Supabase) already connected with base schema
                 - UI components library (shadcn/ui or similar) installed
                 - Tailwind CSS configured
