@@ -109,14 +109,38 @@ def create_phased_plan(client: OpenAI, analysis: str) -> str:
 def extract_project_name(tracker_content: str) -> str:
     """Extract project name from the generated tracker"""
     import re
-    # Look for "# Project: [Name]" pattern
-    match = re.search(r'^#\s+Project:\s+(.+)$', tracker_content, re.MULTILINE)
-    if match:
-        name = match.group(1).strip()
-        # Convert to valid repo name (lowercase, replace spaces with hyphens)
-        name = re.sub(r'[^a-zA-Z0-9-]', '-', name.lower())
-        name = re.sub(r'-+', '-', name).strip('-')
-        return name
+    
+    # Try multiple patterns to find the project name
+    patterns = [
+        r'^#\s+Project:\s+(.+)$',  # # Project: Name
+        r'^Project:\s+(.+)$',       # Project: Name (without #)
+        r'^##\s+Project:\s+(.+)$',  # ## Project: Name
+        r'^#\s+(.+?)\s*(?:Project|App|Application|System|Platform|Dashboard|Hub|Generator|Manager|Tracker)(?:\s|$)',  # # Name Project/App/etc
+    ]
+    
+    for pattern in patterns:
+        match = re.search(pattern, tracker_content, re.MULTILINE | re.IGNORECASE)
+        if match:
+            name = match.group(1).strip()
+            # Clean up common prefixes/suffixes
+            name = re.sub(r'^(AI-Powered|Smart|Intelligent|Advanced|Professional)\s+', '', name, flags=re.IGNORECASE)
+            # Convert to valid repo name (lowercase, replace spaces with hyphens)
+            name = re.sub(r'[^a-zA-Z0-9-]', '-', name.lower())
+            name = re.sub(r'-+', '-', name).strip('-')
+            if name and name != "unnamed" and len(name) > 2:
+                return name
+    
+    # Fallback: try to find any heading that looks like a project name
+    heading_match = re.search(r'^#\s+([A-Z][^#\n]{3,50})$', tracker_content, re.MULTILINE)
+    if heading_match:
+        name = heading_match.group(1).strip()
+        # Skip generic headings
+        if name.lower() not in ['overview', 'introduction', 'description', 'summary', 'template']:
+            name = re.sub(r'[^a-zA-Z0-9-]', '-', name.lower())
+            name = re.sub(r'-+', '-', name).strip('-')
+            if name and len(name) > 2:
+                return name
+    
     return "unnamed-project"
 
 def format_progress_tracker(client: OpenAI, project_name: str, plan: str, analysis: str) -> str:
