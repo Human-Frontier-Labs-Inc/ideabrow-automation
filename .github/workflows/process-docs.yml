@@ -45,13 +45,13 @@ jobs:
           
           echo "Processing project: $UNIQUE_NAME"
           
-          # Try to create new repository (only if PAT_TOKEN is available)
-          if [ -n "${{ secrets.PAT_TOKEN }}" ]; then
+          # Try to create new repository (only if GH_PAT is available)
+          if [ -n "${{ secrets.GH_PAT }}" ]; then
             echo "Creating GitHub repository..."
             gh repo create "Human-Frontier-Labs-Inc/${UNIQUE_NAME}" --private --description "Auto-generated from ideabrow-automation" || echo "Note: Could not create repo, continuing..."
             REPO_URL="git@github.com:Human-Frontier-Labs-Inc/${UNIQUE_NAME}.git"
           else
-            echo "No PAT_TOKEN configured, using placeholder repo URL"
+            echo "No GH_PAT configured, using placeholder repo URL"
             REPO_URL="git@github.com:Human-Frontier-Labs-Inc/${UNIQUE_NAME}.git"
           fi
           
@@ -102,4 +102,4 @@ jobs:
           git commit -m "Processed docs for ${UNIQUE_NAME}" || echo "Nothing to commit"
           git push || echo "Push failed, continuing..."
         env:
-          GH_TOKEN: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
