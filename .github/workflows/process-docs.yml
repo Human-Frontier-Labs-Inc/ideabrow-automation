@@ -1,0 +1,103 @@
+name: Process Project Docs
+
+on:
+  push:
+    paths:
+      - 'docs/**'
+  workflow_dispatch:
+
+jobs:
+  process-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      
+      - name: Check for docs
+        id: check_docs
+        run: |
+          if [ -d "docs" ] && [ "$(ls -A docs)" ]; then
+            echo "has_docs=true" >> $GITHUB_OUTPUT
+            echo "Found docs to process"
+          else
+            echo "has_docs=false" >> $GITHUB_OUTPUT
+            echo "No docs found"
+          fi
+      
+      - name: Process docs and create project
+        if: steps.check_docs.outputs.has_docs == 'true'
+        run: |
+          # Extract project name from first doc
+          FIRST_DOC=$(ls docs/*.md | head -1)
+          PROJECT_NAME=$(grep "^# " "$FIRST_DOC" | head -1 | sed 's/^# //' | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g' | sed 's/-\+/-/g' | sed 's/^-//' | sed 's/-$//')
+          
+          # Create unique name with timestamp
+          TIMESTAMP=$(date +%Y-%m-%d-%H%M%S)
+          UNIQUE_NAME="${PROJECT_NAME}-${TIMESTAMP}"
+          
+          echo "Creating project: $UNIQUE_NAME"
+          
+          # Create new repository
+          gh repo create "Human-Frontier-Labs-Inc/${UNIQUE_NAME}" --private --description "Auto-generated from ideabrow-automation"
+          
+          # Prepare webhook payload
+          REQUIREMENTS=$(head -100 "$FIRST_DOC" | tr '\n' ' ')
+          
+          # Create progress tracker
+          cat > progress_tracker.md << 'EOF'
+          # Project Progress Tracker
+          
+          ## Phase 1: Template Analysis
+          - Analyze provided template
+          - Understand existing features
+          - Plan extensions
+          
+          ## Phase 2: Core Features
+          - Implement main functionality
+          - Set up database schema
+          - Create API endpoints
+          
+          ## Phase 3: Enhancements
+          - Add advanced features
+          - Optimize performance
+          - Integrate third-party services
+          
+          ## Phase 4: Testing & Polish
+          - Write comprehensive tests
+          - Fix bugs
+          - Improve UI/UX
+          
+          ## Phase 5: Documentation & Deploy
+          - Complete documentation
+          - Final review
+          - Deploy to production
+          EOF
+          
+          # Send webhook to our server
+          curl -X POST "${{ secrets.WEBHOOK_URL }}" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"project_name\": \"${UNIQUE_NAME}\",
+              \"github_repo\": \"git@github.com:Human-Frontier-Labs-Inc/${UNIQUE_NAME}.git\",
+              \"requirements_summary\": \"${REQUIREMENTS}\",
+              \"progress_tracker\": \"$(cat progress_tracker.md | sed 's/$/\\n/' | tr -d '\n')\",
+              \"starter_prompt\": \"Let's build ${PROJECT_NAME}. Start by analyzing the template and requirements.\",
+              \"template_hint\": \"modern-saas/nextjs-clerk\"
+            }"
+          
+          # Archive processed docs
+          mkdir -p "processed/${UNIQUE_NAME}"
+          cp -r docs/* "processed/${UNIQUE_NAME}/"
+          
+          # Remove docs to prevent re-processing
+          rm -rf docs/*
+          
+          # Commit the changes
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add .
+          git commit -m "Processed docs for ${UNIQUE_NAME}"
+          git push
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
