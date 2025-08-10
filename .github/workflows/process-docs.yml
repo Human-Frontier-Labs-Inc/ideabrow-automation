@@ -140,9 +140,6 @@ jobs:
           # Try to create new repository (only if GH_PAT is available)
           if [ -n "$GH_TOKEN" ]; then
             echo "Creating GitHub repository..."
-            # Debug: Check token format (show first 8 chars only)
-            echo "Token starts with: ${GH_TOKEN:0:8}..."
-            echo "Token length: ${#GH_TOKEN}"
             # Use curl with the GitHub API directly instead of gh CLI
             curl -X POST \
               -H "Authorization: token ${GH_TOKEN}" \
