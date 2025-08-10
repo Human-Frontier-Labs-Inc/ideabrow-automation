@@ -38,6 +38,8 @@ jobs:
         if: steps.check_docs.outputs.has_docs == 'true'
         run: |
           pip3 install openai requests python-dotenv
+          # requests is already installed but ensure it's available
+          pip3 install --upgrade requests
       
       - name: Generate AI Progress Tracker and Extract Project Name
         if: steps.check_docs.outputs.has_docs == 'true'
@@ -139,15 +141,21 @@ jobs:
           
           # Try to create new repository (only if GH_PAT is available)
           if [ -n "$GH_TOKEN" ]; then
-            echo "Creating GitHub repository..."
-            # Use curl with the GitHub API directly instead of gh CLI
-            curl -X POST \
-              -H "Authorization: token ${GH_TOKEN}" \
-              -H "Accept: application/vnd.github.v3+json" \
-              https://api.github.com/orgs/Human-Frontier-Labs-Inc/repos \
-              -d "{\"name\":\"${UNIQUE_NAME}\",\"private\":true,\"description\":\"Auto-generated from ideabrow-automation\"}" || echo "Note: Could not create repo via API, continuing..."
-            # Use HTTPS URL with PAT token directly (GitHub format)
-            REPO_URL="https://${GH_TOKEN}@github.com/Human-Frontier-Labs-Inc/${UNIQUE_NAME}.git"
+            echo "Creating GitHub repository using Python script..."
+            # Use the Python script for more reliable repo creation
+            REPO_RESULT=$(python3 automated-dev-orchestrator/scripts/create_github_repo.py "${UNIQUE_NAME}" "Human-Frontier-Labs-Inc" "Auto-generated from ideabrow-automation")
+            echo "$REPO_RESULT"
+            
+            # Check if successful (look for JSON_OUTPUT in the result)
+            if echo "$REPO_RESULT" | grep -q "JSON_OUTPUT:"; then
+              echo "Repository created successfully!"
+              # Extract the clone URL from JSON
+              REPO_JSON=$(echo "$REPO_RESULT" | grep "JSON_OUTPUT:" | sed 's/JSON_OUTPUT://')
+              REPO_URL="https://${GH_TOKEN}@github.com/Human-Frontier-Labs-Inc/${UNIQUE_NAME}.git"
+            else
+              echo "Note: Could not create repo, continuing..."
+              REPO_URL="https://github.com/Human-Frontier-Labs-Inc/${UNIQUE_NAME}.git"
+            fi
           else
             echo "No GH_PAT configured, skipping repo creation and push"
             REPO_URL="https://github.com/Human-Frontier-Labs-Inc/${UNIQUE_NAME}.git"
