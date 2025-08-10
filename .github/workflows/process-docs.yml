@@ -140,7 +140,12 @@ jobs:
           # Try to create new repository (only if GH_PAT is available)
           if [ -n "$GH_TOKEN" ]; then
             echo "Creating GitHub repository..."
-            gh repo create "Human-Frontier-Labs-Inc/${UNIQUE_NAME}" --private --description "Auto-generated from ideabrow-automation" || echo "Note: Could not create repo, continuing..."
+            # Use curl with the GitHub API directly instead of gh CLI
+            curl -X POST \
+              -H "Authorization: token ${GH_TOKEN}" \
+              -H "Accept: application/vnd.github.v3+json" \
+              https://api.github.com/orgs/Human-Frontier-Labs-Inc/repos \
+              -d "{\"name\":\"${UNIQUE_NAME}\",\"private\":true,\"description\":\"Auto-generated from ideabrow-automation\"}" || echo "Note: Could not create repo via API, continuing..."
             # Use HTTPS URL with PAT token directly (GitHub format)
             REPO_URL="https://${GH_TOKEN}@github.com/Human-Frontier-Labs-Inc/${UNIQUE_NAME}.git"
           else
