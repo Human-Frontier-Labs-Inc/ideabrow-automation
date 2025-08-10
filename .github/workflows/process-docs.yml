@@ -141,10 +141,10 @@ jobs:
           if [ -n "${{ secrets.GH_PAT }}" ]; then
             echo "Creating GitHub repository..."
             gh repo create "Human-Frontier-Labs-Inc/${UNIQUE_NAME}" --private --description "Auto-generated from ideabrow-automation" || echo "Note: Could not create repo, continuing..."
-            # Use HTTPS URL with token for pushing in GitHub Actions
-            REPO_URL="https://x-access-token:${{ secrets.GH_PAT }}@github.com/Human-Frontier-Labs-Inc/${UNIQUE_NAME}.git"
+            # Use HTTPS URL with PAT token directly (GitHub format)
+            REPO_URL="https://${{ secrets.GH_PAT }}@github.com/Human-Frontier-Labs-Inc/${UNIQUE_NAME}.git"
           else
-            echo "No GH_PAT configured, using placeholder repo URL"
+            echo "No GH_PAT configured, skipping repo creation and push"
             REPO_URL="https://github.com/Human-Frontier-Labs-Inc/${UNIQUE_NAME}.git"
           fi
           
