@@ -125,8 +125,8 @@ jobs:
       - name: Process docs and create project
         if: steps.check_docs.outputs.has_docs == 'true'
         env:
-          GH_PAT: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
-          GH_TOKEN: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
         run: |
           # Use AI-generated project name
           PROJECT_NAME="${{ steps.generate_tracker.outputs.project_name }}"
@@ -138,11 +138,11 @@ jobs:
           echo "Processing project: $UNIQUE_NAME"
           
           # Try to create new repository (only if GH_PAT is available)
-          if [ -n "${{ secrets.GH_PAT }}" ]; then
+          if [ -n "$GH_TOKEN" ]; then
             echo "Creating GitHub repository..."
             gh repo create "Human-Frontier-Labs-Inc/${UNIQUE_NAME}" --private --description "Auto-generated from ideabrow-automation" || echo "Note: Could not create repo, continuing..."
             # Use HTTPS URL with PAT token directly (GitHub format)
-            REPO_URL="https://${{ secrets.GH_PAT }}@github.com/Human-Frontier-Labs-Inc/${UNIQUE_NAME}.git"
+            REPO_URL="https://${GH_TOKEN}@github.com/Human-Frontier-Labs-Inc/${UNIQUE_NAME}.git"
           else
             echo "No GH_PAT configured, skipping repo creation and push"
             REPO_URL="https://github.com/Human-Frontier-Labs-Inc/${UNIQUE_NAME}.git"
@@ -185,7 +185,7 @@ jobs:
           fi
           
           # Push initial content to the new repository
-          if [ -n "${{ secrets.GH_PAT }}" ]; then
+          if [ -n "$GH_TOKEN" ]; then
             echo "Pushing initial content to new repository..."
             
             # Create a temporary directory for the new repo

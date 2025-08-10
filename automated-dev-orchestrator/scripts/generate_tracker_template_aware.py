@@ -12,7 +12,7 @@ from openai import OpenAI
 from typing import List
 
 # Model configuration
-MODEL = "z-ai/glm-4.5"
+MODEL = "qwen/qwen3-235b-a22b-thinking-2507"
 
 def get_client():
     """Initialize OpenRouter client"""
