@@ -1,0 +1,9 @@
+{
+  "name": "ideabrow-automation",
+  "version": "1.0.0",
+  "description": "Automated development orchestrator",
+  "private": true,
+  "scripts": {
+    "test": "echo \"No tests configured\""
+  }
+}
