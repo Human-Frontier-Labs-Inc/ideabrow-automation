@@ -194,7 +194,7 @@ jobs:
             WEBHOOK_REPO_URL="git@github.com:Human-Frontier-Labs-Inc/${UNIQUE_NAME}.git"
             
             # Create JSON payload using printf to properly escape variables
-            JSON_PAYLOAD=$(printf '{"project_name":"%s","github_repo":"%s","requirements_summary":"%s","progress_tracker":"%s","starter_prompt":"%s","template_hint":"%s"}' \
+            JSON_PAYLOAD=$(printf '{"project_name":"%s","github_repo":"%s","requirements_summary":"%s","progress_tracker_content":"%s","starter_prompt":"%s","template_hint":"%s"}' \
               "$UNIQUE_NAME" \
               "$WEBHOOK_REPO_URL" \
               "$REQUIREMENTS" \
