@@ -168,14 +168,14 @@ jobs:
             REPO_URL="https://github.com/Human-Frontier-Labs-Inc/${UNIQUE_NAME}.git"
           fi
           
-          # Prepare webhook payload - escape quotes and newlines properly
+          # Prepare webhook payload
           FIRST_DOC=$(ls docs/*.md | head -1)
-          REQUIREMENTS=$(head -100 "$FIRST_DOC" | sed 's/"/\\"/g' | sed "s/\`/'/g" | awk '{printf "%s\\n", $0}' | head -c 500)
+          REQUIREMENTS=$(head -100 "$FIRST_DOC" | head -c 500)
+          # No need for manual escaping - jq will handle it properly
           
-          # Use the AI-generated progress tracker content - MUST escape backticks to prevent command injection
+          # Use the AI-generated progress tracker content
           TRACKER_CONTENT="${{ steps.generate_tracker.outputs.tracker_content }}"
-          # CRITICAL SECURITY: Escape backticks, dollar signs, and quotes to prevent command injection
-          TRACKER_CONTENT=$(echo "$TRACKER_CONTENT" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | sed "s/\`/'/g" | sed 's/\$/\\$/g')
+          # No need for manual escaping - jq will handle it properly
           
           # If tracker is empty for some reason, use fallback
           if [ -z "$TRACKER_CONTENT" ]; then
@@ -193,14 +193,23 @@ jobs:
             # Use SSH URL in webhook (no token exposed)
             WEBHOOK_REPO_URL="git@github.com:Human-Frontier-Labs-Inc/${UNIQUE_NAME}.git"
             
-            # Create JSON payload using printf to properly escape variables
-            JSON_PAYLOAD=$(printf '{"project_name":"%s","github_repo":"%s","requirements_summary":"%s","progress_tracker_content":"%s","starter_prompt":"%s","template_hint":"%s"}' \
-              "$UNIQUE_NAME" \
-              "$WEBHOOK_REPO_URL" \
-              "$REQUIREMENTS" \
-              "$TRACKER_CONTENT" \
-              "Let's build ${PROJECT_NAME}. Start by analyzing the template and requirements." \
-              "modern-saas/nextjs-clerk")
+            # Install jq if not available
+            which jq > /dev/null 2>&1 || sudo apt-get install -y jq
+            
+            # Create JSON payload using jq for proper escaping
+            JSON_PAYLOAD=$(jq -n \
+              --arg pn "$UNIQUE_NAME" \
+              --arg gr "$WEBHOOK_REPO_URL" \
+              --arg rs "$REQUIREMENTS" \
+              --arg pt "$TRACKER_CONTENT" \
+              --arg sp "Let's build ${PROJECT_NAME}. Start by analyzing the template and requirements." \
+              --arg th "modern-saas/nextjs-clerk" \
+              '{project_name: $pn, github_repo: $gr, requirements_summary: $rs, progress_tracker_content: $pt, starter_prompt: $sp, template_hint: $th}')
+            
+            # Debug: Show first 500 chars of JSON to verify it's valid
+            echo "JSON payload (first 500 chars):"
+            echo "$JSON_PAYLOAD" | head -c 500
+            echo ""
             
             curl -X POST "${{ secrets.DEV_SERVER_WEBHOOK_URL }}" \
               -H "Content-Type: application/json" \
