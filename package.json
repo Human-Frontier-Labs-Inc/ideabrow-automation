@@ -4,6 +4,9 @@
   "description": "Automated development orchestrator",
   "private": true,
   "scripts": {
-    "test": "echo \"No tests configured\""
+    "test": "echo \"No tests configured\"",
+    "dev": "echo \"No dev server configured\"",
+    "build": "echo \"No build configured\"",
+    "start": "echo \"No start script configured\""
   }
 }

@@ -6,6 +6,10 @@ on:
       - 'docs/**'
   workflow_dispatch:
 
+concurrency:
+  group: process-docs-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false  # Don't cancel, just queue
+
 permissions:
   contents: write
 
@@ -15,7 +19,9 @@ jobs:
     
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       
       - name: Check for docs
         id: check_docs
@@ -30,9 +36,10 @@ jobs:
       
       - name: Setup Python
         if: steps.check_docs.outputs.has_docs == 'true'
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5.1.1
         with:
           python-version: '3.11'
+          # No cache parameter - completely omit it to avoid any caching attempts
       
       - name: Install dependencies
         if: steps.check_docs.outputs.has_docs == 'true'
@@ -163,10 +170,12 @@ jobs:
           
           # Prepare webhook payload - escape quotes and newlines properly
           FIRST_DOC=$(ls docs/*.md | head -1)
-          REQUIREMENTS=$(head -100 "$FIRST_DOC" | sed 's/"/\\"/g' | awk '{printf "%s\\n", $0}' | head -c 500)
+          REQUIREMENTS=$(head -100 "$FIRST_DOC" | sed 's/"/\\"/g' | sed "s/\`/'/g" | awk '{printf "%s\\n", $0}' | head -c 500)
           
-          # Use the AI-generated progress tracker content
+          # Use the AI-generated progress tracker content - MUST escape backticks to prevent command injection
           TRACKER_CONTENT="${{ steps.generate_tracker.outputs.tracker_content }}"
+          # CRITICAL SECURITY: Escape backticks, dollar signs, and quotes to prevent command injection
+          TRACKER_CONTENT=$(echo "$TRACKER_CONTENT" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | sed "s/\`/'/g" | sed 's/\$/\\$/g')
           
           # If tracker is empty for some reason, use fallback
           if [ -z "$TRACKER_CONTENT" ]; then
@@ -183,16 +192,19 @@ jobs:
             echo "Sending webhook to: ${{ secrets.DEV_SERVER_WEBHOOK_URL }}"
             # Use SSH URL in webhook (no token exposed)
             WEBHOOK_REPO_URL="git@github.com:Human-Frontier-Labs-Inc/${UNIQUE_NAME}.git"
+            
+            # Create JSON payload using printf to properly escape variables
+            JSON_PAYLOAD=$(printf '{"project_name":"%s","github_repo":"%s","requirements_summary":"%s","progress_tracker":"%s","starter_prompt":"%s","template_hint":"%s"}' \
+              "$UNIQUE_NAME" \
+              "$WEBHOOK_REPO_URL" \
+              "$REQUIREMENTS" \
+              "$TRACKER_CONTENT" \
+              "Let's build ${PROJECT_NAME}. Start by analyzing the template and requirements." \
+              "modern-saas/nextjs-clerk")
+            
             curl -X POST "${{ secrets.DEV_SERVER_WEBHOOK_URL }}" \
               -H "Content-Type: application/json" \
-              -d "{
-                \"project_name\": \"${UNIQUE_NAME}\",
-                \"github_repo\": \"${WEBHOOK_REPO_URL}\",
-                \"requirements_summary\": \"${REQUIREMENTS}\",
-                \"progress_tracker\": \"${TRACKER_CONTENT}\",
-                \"starter_prompt\": \"Let's build ${PROJECT_NAME}. Start by analyzing the template and requirements.\",
-                \"template_hint\": \"modern-saas/nextjs-clerk\"
-              }" || echo "Webhook failed, continuing..."
+              -d "$JSON_PAYLOAD" || echo "Webhook failed, continuing..."
           else
             echo "No DEV_SERVER_WEBHOOK_URL configured, skipping webhook"
           fi
